@@ -99,7 +99,7 @@ public class ContactsTest extends StageTest<TestClue> {
                     output = output.strip().toLowerCase();
                     if (!output.contains("enter action")) {
                         return new CheckResult(false,
-                            "I didn't see where \"Enter action\" part in the responsesFromClient");
+                            "No \"Enter action\" substring found in the output");
                     }
                     return CheckResult.correct();
                 })),
@@ -112,8 +112,7 @@ public class ContactsTest extends StageTest<TestClue> {
                     output = output.strip().toLowerCase();
                     if (!output.contains("0 records")) {
                         return new CheckResult(false,
-                            "No \"0 records\" part " +
-                                "in the responsesFromClient in a place where it should be");
+                            "No \"0 records\" substring found in the output");
                     }
                     return CheckResult.correct();
                 })),
@@ -126,8 +125,7 @@ public class ContactsTest extends StageTest<TestClue> {
                     output = output.strip().toLowerCase();
                     if (!output.contains("no records to edit")) {
                         return new CheckResult(false,
-                            "No \"No records to edit\" part " +
-                                "in the responsesFromClient in a place where it should be");
+                            "No \"No records to edit\" substring found in the output");
                     }
                     return CheckResult.correct();
                 })),
@@ -140,8 +138,7 @@ public class ContactsTest extends StageTest<TestClue> {
                     output = output.strip().toLowerCase();
                     if (!output.contains("no records to remove")) {
                         return new CheckResult(false,
-                            "No \"No records to remove\" part " +
-                                "in the responsesFromClient in a place where it should be");
+                            "No \"No records to remove\" substring found in the output");
                     }
                     return CheckResult.correct();
                 })),
