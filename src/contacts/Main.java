@@ -1,203 +1,229 @@
 package contacts;
 
-import java.time.LocalDateTime;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class Main {
-       
+public class Main implements Serializable {
+
     public static void main(String[] args) {
-       List<AllRecords> records = new ArrayList<>();
-       Scanner scanner = new Scanner(System.in);
-       boolean exit =false;
-       while(!exit){
-          System.out.println("Enter action (add, remove, edit, count, info, exit):");
-          String userChoice = scanner.nextLine().trim().toLowerCase();
-          switch(userChoice){
-             case "add":
-                System.out.println("Enter the type (person, organization): ");
-                String recordType = scanner.nextLine();
+        List<AllRecords> records = new ArrayList<>();
+        Scanner scanner = new Scanner(System.in);
+        boolean exit = false;
+        String fileName = "phonebook.db";
+        //if file exists deserialize the object and store contacts in records
+        if (new File(fileName).exists()) {
+            // deserialize(fileName);
 
-                   AllRecords record = createRecord(scanner,recordType);
-                   record.setDateCreated(LocalDateTime.now());
-                   record.setLastEditDate(LocalDateTime.now());
-                   records.add(record);
+            try {
+                records = (List<AllRecords>) SerializeUtil.deserialize(fileName);
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+        while (!exit) {
+            System.out.println("[menu] Enter action (add, list, search, count, exit):");
+            String userChoice = scanner.nextLine().trim().toLowerCase();
+            switch (userChoice) {
+                case "add":
+                    System.out.print("Enter the type (person, organization): ");
+                    String recordType = scanner.nextLine();
 
-                System.out.println("The record added.\n");
-                break;
-             case "remove":
-                if(records.isEmpty()){
-                   System.out.println("No records to remove!");
-                }else{
-                   removeARecord(records, scanner);
-                }
-                break;
-             case "edit":
-                if(records.isEmpty()){
-                   System.out.println("No records to edit!");
-                }else {
-                   editARecord(records, scanner);
-                   System.out.println("The record updated!\n");
-                }
-                break;
-             case "count":
-                if(records.isEmpty()){
-                   System.out.println("The Phone Book has 0 records.");
-                }else {
-                   System.out.println("The Phone Book has "+records.size() +" records.");
-                }
-                break;
-             case "info":
-                showAllRecords(records);
-                System.out.print("Enter index to show info: ");
-                int recordNumbr = scanner.nextInt();
-                AllRecords recordToShow = records.get(recordNumbr-1);
-                System.out.println(recordToShow);
-                break;
-             case "exit":
-                exit = true;
-                break;
-          }
-       }
+                    AllRecords record = createRecord(scanner, recordType);
+
+                    records.add(record);
+
+                    System.out.println("The record added.\n");
+                    break;
+                case "search":
+
+                    ArrayList<AllRecords> searchRecords = search(records, scanner);
+                    System.out.println("Found " + searchRecords.size() + " results:\n");
+                    showAllRecords(searchRecords);
+                    System.out.println("[search] Enter action ([number], back, again): ");
+                    String searchOption = scanner.nextLine().trim();
+                    if (searchOption.equals("again")) {
+                        searchRecords = search(records, scanner);
+                        System.out.println("Found " + searchRecords.size() + " results:\n");
+                        showAllRecords(searchRecords);
+                    } else if (Integer.parseInt(searchOption) <= searchRecords.size()) {
+                        AllRecords rec = searchRecords.get(Integer.parseInt(searchOption) - 1);
+                        String[] allFields = rec.changableFields();
+                        for (String field : allFields) {
+                            System.out.println(rec.getAField(field));
+                        }
+
+                        updateRecord(records, scanner, rec);
+                    } else if (searchOption.equals("exit")) {
+                        break;
+                    }
+
+                    break;
+
+                case "count":
+                    if (records.isEmpty()) {
+                        System.out.println("The Phone Book has 0 records.");
+                    } else {
+                        System.out.println("The Phone Book has " + records.size() + " records.");
+                    }
+                    break;
+                //case "info":
+                case "list":
+                    showAllRecords(records);
+                    System.out.print("Enter index to show info: ");
+                    int recordNumbr = scanner.nextInt();
+                    AllRecords recordToShow = records.get(recordNumbr - 1);
+                    System.out.println(recordToShow);
+                    updateRecord(records, scanner, recordToShow);
+                    break;
+                case "exit":
+                    exit = true;
+                    break;
+            }
+        }
+        //serialize the records
+        SerializeUtil.seialize(records, fileName);
+
+
     }
 
-   private static void editARecord(List<AllRecords> phoneRecords, Scanner scanner) {
-      showAllRecords(phoneRecords);
-      System.out.println("Select a record:");
-      int recordToEdit = scanner.nextInt();
-     // AllRecords editPersonRecords =  phoneRecords.get(recordToEdit-1);
-      //System.out.println(editContact);
-      if(phoneRecords.get(recordToEdit-1).getClass()==PersonRecords.class) {
-         PersonRecords editPersonRecords= (PersonRecords) phoneRecords.get(recordToEdit-1);
-         System.out.println("Select a field (name, surname, birth, gender, number): ");
-         String userEditOption = scanner.next();
-         switch (userEditOption) {
-            case "name":
-               System.out.print("Enter name: ");
-               editPersonRecords.setFirstName(scanner.next());
-               break;
-            case "surname":
-               System.out.print("Enter surname: ");
-               editPersonRecords.setLastName(scanner.next());
-               break;
-            case "number":
+    private static void updateRecord(List<AllRecords> records, Scanner scanner, AllRecords rec) {
+        boolean recordExit = false;
+        while (!recordExit) {
+            System.out.println("[record] Enter action (edit, delete, menu): ");
+            String recordOption = scanner.next();
+            scanner.nextLine();
+            switch (recordOption) {
+                case "edit":
+                    editARecord(rec, scanner);
 
-               System.out.print("Enter number: ");
-               scanner.nextLine();
-               editPersonRecords.setPhoneNumber(scanner.nextLine());
-               break;
-            case "birth":
+                    System.out.println("Saved");
+                    for (String field : rec.changableFields()) {
+                        System.out.println(rec.getAField(field));
+                    }
 
-               System.out.print("Enter birth date: ");
-               editPersonRecords.setBirthDate(scanner.nextLine());
-               break;
-            case "gender":
+                    break;
+                case "delete":
 
-               System.out.print("Enter gender: ");
-               editPersonRecords.setGender(scanner.next().trim().toUpperCase());
-               break;
-
-         }
-         editPersonRecords.setLastEditDate(LocalDateTime.now());
-         }else if(phoneRecords.get(recordToEdit-1).getClass()==OrganizationRecords.class) {
-            OrganizationRecords editOrgRecords= (OrganizationRecords) phoneRecords.get(recordToEdit-1);
-            System.out.println("Select a field (name, address, number): ");
-            String userEditOption = scanner.next();
-            switch (userEditOption) {
-               case "name":
-                  System.out.print("Enter name: ");
-                  editOrgRecords.setOrganizationName(scanner.next());
-                  break;
-               case "number":
-
-                  System.out.print("Enter number: ");
-                  scanner.nextLine();
-                  editOrgRecords.setPhoneNumber(scanner.nextLine());
-                  break;
-               case "address":
-
-                  System.out.print("Enter address: ");
-                  scanner.nextLine();
-                  editOrgRecords.setOrganizationAddress(scanner.nextLine());
-                  break;
+                    records.removeIf(contact -> contact.getPhoneNumber().equals(rec.getPhoneNumber()));
+                    //removeARecord(rec,scanner);
+                    //searchRecords.remove()
+                    System.out.println("record deleted!");
+                    break;
+                case "menu":
+                    recordExit = true;
+                    System.out.println();
+                    break;
             }
-         editOrgRecords.setLastEditDate(LocalDateTime.now());
-      }
-      //System.out.println(editContact);
-     // System.out.println("The record updated!\n");
-   }
 
-   private static void removeARecord(List<AllRecords> phoneRecords, Scanner scanner) {
-      showAllRecords(phoneRecords);
-      System.out.println("Select a record:");
-      int recordToRemove = scanner.nextInt();
-      phoneRecords.remove(recordToRemove-1);
-      System.out.println("The record removed!");
-   }
+        }
+    }
 
-   private static void showAllRecords(List<AllRecords> phoneRecords) {
-      int i=1;
-      //System.out.print(i);
-      for (AllRecords record : phoneRecords) {
-         System.out.print(i+". ");
-         if(record.getClass()==PersonRecords.class){
-            System.out.println(((PersonRecords) record).getFirstName()+" "+((PersonRecords) record).getLastName());
-         }else if(record.getClass()==OrganizationRecords.class){
-            System.out.println(((OrganizationRecords) record).getOrganizationName());
-         }
-         //System.out.print(record);
-         //System.out.println();
-         i += 1;
-      }
-   }
-
-   private static AllRecords createRecord(Scanner scanner,String recordType) {
-       AllRecords newRecord=null;
-       if(recordType.equals("person")) {
-
-          PersonRecords personRecords = new PersonRecords();
-          //Scanner scanner = new Scanner(System.in);
-          System.out.print("Enter the name: ");
-          personRecords.setFirstName(scanner.nextLine());
-          System.out.print("Enter the surname: ");
-          personRecords.setLastName(scanner.nextLine());
-          System.out.print("Enter the birth date: ");
-          personRecords.setBirthDate(scanner.nextLine());
-          System.out.print("Enter the gender(M, F):");
-          personRecords.setGender(scanner.nextLine());
-          System.out.print("Enter the number: ");
-          personRecords.setPhoneNumber(scanner.nextLine());
+    private static ArrayList<AllRecords> search(List<AllRecords> records, Scanner scanner) {
+        ArrayList<AllRecords> searchRecords = new ArrayList<>();
+        System.out.println("Enter search query:");
+        String searchString = scanner.nextLine().toLowerCase();
+        //int i=1;
+        //System.out.print(i);
+        Pattern pattern = Pattern.compile("(?s).*" + searchString + ".*");
+        Matcher matcher;
+        for (AllRecords rec : records) {
+            matcher = pattern.matcher(rec.getName().toLowerCase() + rec.getPhoneNumber());
+            if (matcher.matches()) {
+                searchRecords.add(rec);
+            }
+        }
+        return searchRecords;
+    }
 
 
+    private static void editARecord(AllRecords phoneRecords, Scanner scanner) {
 
+        System.out.println("select a field " + Arrays.toString(phoneRecords.changableFields()));
+        String userEditOption = scanner.next();
+        scanner.nextLine();
+        for (String field : phoneRecords.changableFields()) {
+            if (userEditOption.equals(field)) {
+                System.out.println("Enter " + field + ": ");
+                String str = scanner.nextLine();
+                phoneRecords.changeAField(field, str);
+                //scanner.nextLine();
+            }
+        }
+    }
 
+    private static void removeARecord(List<AllRecords> phoneRecords, Scanner scanner) {
+        showAllRecords(phoneRecords);
+        System.out.println("Select a record:");
+        int recordToRemove = scanner.nextInt();
+        phoneRecords.remove(recordToRemove - 1);
+        System.out.println("The record removed!");
+    }
 
-          //System.out.println("A record created!");
-          //System.out.println("A Phone Book with a single record created!");
-          newRecord= personRecords;
-       }else if (recordType.equals("organization")) {
+    private static void showAllRecords(List<AllRecords> phoneRecords) {
+        int i = 1;
+        //System.out.print(i);
+        for (AllRecords record : phoneRecords) {
+            System.out.print(i + ". ");
+            System.out.println(record.getName());
 
-          String name;
+            i += 1;
+        }
+    }
 
-          String address;
-          String number;
-          //Scanner scanner = new Scanner(System.in);
-          System.out.println("Enter the organization name:");
-          name = scanner.nextLine();
-          System.out.println("Enter the address:");
-          address = scanner.nextLine();
-          System.out.println("Enter the number:");
-          number = scanner.nextLine();
-          OrganizationRecords organizationRecord = new OrganizationRecords();
-          organizationRecord.setOrganizationName(name);
-          organizationRecord.setOrganizationAddress(address);
-          organizationRecord.setPhoneNumber(number);
-          //System.out.println("A record created!");
-          //System.out.println("A Phone Book with a single record created!");
-          newRecord= organizationRecord;
-       }
-       return newRecord;
-   }
+    private static AllRecords createRecord(Scanner scanner, String recordType) {
+        AllRecords newRecord = null;
+        if (recordType.equals("person")) {
+            String name;
+            String surName;
+            String number;
+            String dob;
+            String gender;
+            PersonRecords personRecords = new PersonRecords();
+            //Scanner scanner = new Scanner(System.in);
+            System.out.print("Enter the name: ");
+            name = scanner.nextLine();
+            personRecords.setFirstName(name);
+            System.out.print("Enter the surname: ");
+            surName = scanner.nextLine();
+            personRecords.setLastName(surName);
+            System.out.print("Enter the birth date: ");
+            dob = scanner.nextLine();
+            personRecords.setBirthDate(dob);
+            System.out.print("Enter the gender(M, F):");
+            gender = scanner.nextLine();
+            personRecords.setGender(gender);
+            System.out.print("Enter the number: ");
+            number = scanner.nextLine();
+            personRecords.setPhoneNumber(number);
+
+            newRecord = personRecords;
+        } else if (recordType.equals("organization")) {
+
+            String name;
+
+            String address;
+            String number;
+            //Scanner scanner = new Scanner(System.in);
+            System.out.println("Enter the organization name:");
+            name = scanner.nextLine();
+            System.out.println("Enter the address:");
+            address = scanner.nextLine();
+            System.out.println("Enter the number:");
+            number = scanner.nextLine();
+            OrganizationRecords organizationRecord = new OrganizationRecords();
+            organizationRecord.setOrganizationName(name);
+            organizationRecord.setOrganizationAddress(address);
+            organizationRecord.setPhoneNumber(number);
+            //System.out.println("A record created!");
+            //System.out.println("A Phone Book with a single record created!");
+            newRecord = organizationRecord;
+        }
+        return newRecord;
+    }
 
 }

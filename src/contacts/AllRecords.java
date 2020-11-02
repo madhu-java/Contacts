@@ -1,17 +1,24 @@
 package contacts;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class AllRecords {
-    private  String phoneNumber ="";
-    private  LocalDateTime dateCreated;
+public abstract class AllRecords implements Serializable {
+    private String phoneNumber = "";
+    private final LocalDateTime dateCreated;
     private LocalDateTime lastEditDate;
-    private boolean checkNumber(String phoneNumber){
+
+    public AllRecords() {
+        this.dateCreated = LocalDateTime.now();
+        this.lastEditDate = this.dateCreated;
+    }
+
+    private boolean checkNumber(String phoneNumber) {
         // System.out.println("from check ph "+phoneNumber );
         boolean correctFormat = false;
-        correctFormat= phoneNumber.matches("\\+?\\(?[0-9a-zA-Z]+\\)?([\\s-]{1}\\(?[0-9a-zA-Z]{2,}\\)?)*");
+       // correctFormat = phoneNumber.matches("\\+?\\(?[0-9a-zA-Z]+\\)?([\\s-]{1}\\(?[0-9a-zA-Z]{2,}\\)?)*");
         String regex = "(\\+?\\(\\w+\\)([\\s-]\\w{2,})*)|(\\+?\\w+([\\s-]\\(\\w{2,}\\))?([\\s-]\\w{2,})*)";
         //System.out.println("pnum "+phoneNumber+" correctformat "+correctFormat);
 //        if(correctFormat) {
@@ -36,14 +43,20 @@ public class AllRecords {
         correctFormat = matcher.matches();
         return correctFormat;
     }
+abstract public String getName();
+    abstract public String[] changableFields();
+
+    abstract public void changeAField(String name, String value);
+
+    abstract public String getAField(String name);
 
     public LocalDateTime getDateCreated() {
         return dateCreated;
     }
 
-    public void setDateCreated(LocalDateTime dateCreated) {
-        this.dateCreated = dateCreated;
-    }
+//    public void setDateCreated(LocalDateTime dateCreated) {
+//        this.dateCreated = dateCreated;
+//    }
 
     public LocalDateTime getLastEditDate() {
         return lastEditDate;
@@ -59,14 +72,15 @@ public class AllRecords {
 
     public void setPhoneNumber(String phoneNumber) {
         //System.out.println("from set "+phoneNumber);
-        if(checkNumber(phoneNumber)) {
+        if (checkNumber(phoneNumber)) {
             this.phoneNumber = phoneNumber;
-        }else{
+        } else {
             System.out.println("Wrong number format!");
             this.phoneNumber = "[no number]";
         }
     }
+
     public String toString() {
-        return String.format("Number: %s\nTime created: %s\nTime last edit: %s\n",phoneNumber,dateCreated,lastEditDate);
+        return String.format("Number: %s\nTime created: %s\nTime last edit: %s\n", phoneNumber, dateCreated, lastEditDate);
     }
 }
