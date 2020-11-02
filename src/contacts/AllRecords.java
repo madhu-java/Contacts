@@ -1,17 +1,18 @@
 package contacts;
 
+import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Contact {
-    private  String firstName ="";
-    private  String lastName ="";
+public class AllRecords {
     private  String phoneNumber ="";
+    private  LocalDateTime dateCreated;
+    private LocalDateTime lastEditDate;
     private boolean checkNumber(String phoneNumber){
-       // System.out.println("from check ph "+phoneNumber );
-       boolean correctFormat = false;
+        // System.out.println("from check ph "+phoneNumber );
+        boolean correctFormat = false;
         correctFormat= phoneNumber.matches("\\+?\\(?[0-9a-zA-Z]+\\)?([\\s-]{1}\\(?[0-9a-zA-Z]{2,}\\)?)*");
-       String regex = "(\\+?\\(\\w+\\)([\\s-]\\w{2,})*)|(\\+?\\w+([\\s-]\\(\\w{2,}\\))?([\\s-]\\w{2,})*)";
+        String regex = "(\\+?\\(\\w+\\)([\\s-]\\w{2,})*)|(\\+?\\w+([\\s-]\\(\\w{2,}\\))?([\\s-]\\w{2,})*)";
         //System.out.println("pnum "+phoneNumber+" correctformat "+correctFormat);
 //        if(correctFormat) {
 //            String[] s = phoneNumber.split("\\s|-");
@@ -36,22 +37,20 @@ public class Contact {
         return correctFormat;
     }
 
-    @Override
-    public String toString() {
-        return  ". "+firstName +" "+lastName+", "+phoneNumber;
-//        "Contact{" +
-//                "firstName='" + firstName + '\'' +
-//                ", lastName='" + lastName + '\'' +
-//                ", phoneNumber='" + phoneNumber + '\'' +
-//                '}';
+    public LocalDateTime getDateCreated() {
+        return dateCreated;
     }
 
-    public String getLastName() {
-        return lastName;
+    public void setDateCreated(LocalDateTime dateCreated) {
+        this.dateCreated = dateCreated;
     }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
+    public LocalDateTime getLastEditDate() {
+        return lastEditDate;
+    }
+
+    public void setLastEditDate(LocalDateTime lastEditDate) {
+        this.lastEditDate = lastEditDate;
     }
 
     public String getPhoneNumber() {
@@ -67,12 +66,7 @@ public class Contact {
             this.phoneNumber = "[no number]";
         }
     }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
+    public String toString() {
+        return String.format("Number: %s\nTime created: %s\nTime last edit: %s\n",phoneNumber,dateCreated,lastEditDate);
     }
 }
